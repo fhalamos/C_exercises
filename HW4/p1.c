@@ -191,7 +191,7 @@ void print_dictionary(Hashmap* dictionary)
 			comparator);
 
 	for(int i=0; i<dictionary->n_entries;i++)
-		printf("[%d] %s: %s\n", allNodes[i].word, allNodes[i].definition);
+		printf("[%d] %s: %s\n", allNodes[i].bin, allNodes[i].word, allNodes[i].definition);
 }
 
 Node* create_node(char * word, char* definition, int index)
@@ -199,8 +199,9 @@ Node* create_node(char * word, char* definition, int index)
 	Node* new_node = (Node*) malloc(sizeof(Node));
 	memcpy(new_node->word, word, strlen(word)+1);
 	memcpy(new_node->definition, definition, strlen(definition)+1);
-	new_node->next = NULL;
 	new_node->bin = index;
+	new_node->next = NULL;
+	return new_node;
 }
 
 int add_word(Hashmap *dictionary, char * word, char * definition)
