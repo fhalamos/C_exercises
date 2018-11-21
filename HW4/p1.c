@@ -30,19 +30,32 @@ typedef struct hashmap{
   
 } Hashmap;
 
+//int max=0;
 unsigned int naive_hash(char * word, int nbins)
 {
-	printf("using naive_hash\n");
 	unsigned int h = 0;
 	int c;
+
+	char * w_copy = malloc(strlen(word) + 1); 
+	strcpy(w_copy, word);
+
 	while(c = *word++)
 		h += c;
+
+	/*In case we want to calculate the max index:
+	if(h>max)
+	{
+		max=h;
+		printf("new max, word %s, max %d\n", w_copy, max);
+	}
+	*/
+	free(w_copy);
+
 	return h % nbins;
 }
 
 unsigned int bernstein_hash(char * word, int nbins)
 {
-	printf("using bernstein_hash\n");
 	unsigned int h = 5381;
 	int c;
 	while(c = *word++)
@@ -52,7 +65,6 @@ unsigned int bernstein_hash(char * word, int nbins)
 
 unsigned int FNV_hash(char * word, int nbins)
 {
-	printf("using fnv\n");
 	unsigned long h = 14695981039346656037lu;
 	char c;
 	while(c = *word++)
@@ -94,6 +106,7 @@ int delete_word(Hashmap* dictionary, char * word)
 	{
 		dictionary->data[index] = n->next;
 		free(n);
+		dictionary->n_entries--;
 		return 0;
 	}
 
@@ -109,6 +122,7 @@ int delete_word(Hashmap* dictionary, char * word)
 	{
 		parent->next = n->next;
 		free(n);
+		dictionary->n_entries--;
 		return 0;
 	}
 	else
@@ -129,40 +143,19 @@ void clear_dictionary(Hashmap * dictionary)
 		}
 		dictionary->data[i] = NULL;
 	}
+	dictionary = (Hashmap*) realloc(dictionary, 16);
 	dictionary->n_entries=0;
+	dictionary->n_bins=16;
 }
 
 
-int import_file(char * fname, Hashmap * dictionary )
-{
-    printf("a importar\n");
-    FILE* file = fopen(fname, "r"); /* should check the result */
-    char line[WORD_LEN + 3 + DEF_LEN];
 
-    if(file==NULL)
-    	return 1;
-
-    while (fgets(line, sizeof(line), file)) {
-        
-        if(line[strlen(line)-1]=='\n')
-        	line[strlen(line)-1] = '\0';
-
-    	char *word = strtok(line, " ");
-    	char *definition= strtok(NULL, "");
-  
-    	add_word(dictionary, word, definition);
-    }
-    fclose(file);
-    return 0;
-}
 
 int comparator(const void *p, const void *q) 
 {
-	Node n1 = *(Node*) p;
-	Node n2 = *(Node*) q;
-
-
-	return strcmp(n1.word,n2.word);
+	Node *n1 = *(Node**) p;
+	Node *n2 = *(Node**) q;
+	return strcmp(n1->word,n2->word);
 }  
 
 
@@ -171,27 +164,54 @@ void print_dictionary(Hashmap* dictionary)
 	printf("bins: %d\n", dictionary->n_bins);
 	printf("entries: %d\n", dictionary->n_entries);
 
-	Node allNodes[dictionary->n_entries];
+	Node ** allNodes = (Node**) malloc(dictionary->n_entries*sizeof(Node*));
 	int counter=0;
+
+
 
 	for(int i =0; i<dictionary->n_bins;i++)
 	{
 		Node * n = dictionary->data[i];
 		while(n!=NULL)
 		{
-			allNodes[counter]=*n;
+			allNodes[counter]=n;
 			counter++;
 			n = n->next;
 		}
 	}
 
+
 	qsort(	allNodes,
 			dictionary->n_entries,
-			sizeof(Node), 
+			sizeof(Node*), 
 			comparator);
 
 	for(int i=0; i<dictionary->n_entries;i++)
-		printf("[%d] %s: %s\n", allNodes[i].bin, allNodes[i].word, allNodes[i].definition);
+		printf("[%d] %s: %s\n", allNodes[i]->bin, allNodes[i]->word, allNodes[i]->definition);
+
+	free(allNodes);	
+}
+
+//Used to print empty bins too and see distribution of words in bins.
+void print_dictionary2(Hashmap* dictionary)
+{
+	printf("bins: %d\n", dictionary->n_bins);
+	printf("entries: %d\n", dictionary->n_entries);
+
+	for(int i =0; i<dictionary->n_bins;i++)
+	{
+		Node * n = dictionary->data[i];
+		if(n)
+		{
+			while(n!=NULL)
+			{
+				printf("[%d] %s: %s\n", n->bin, n->word, n->definition);
+				n = n->next;
+			}
+		}
+		else
+			printf("[%d] %s\n", i, "EMPTY");
+	}
 }
 
 Node* create_node(char * word, char* definition, int index)
@@ -207,45 +227,56 @@ Node* create_node(char * word, char* definition, int index)
 int add_word(Hashmap *dictionary, char * word, char * definition)
 {
 	//If, when adding new word, load factor >= 0.75, resize hashmap
+
 	double load_factor;
 	load_factor = (double)(dictionary->n_entries+1)/dictionary->n_bins;
-	
+
 	//If condition, double bins in dictionary and rehash all elements	
 	if(load_factor>=0.75)
 	{
+
 		//Double number of bins
 		dictionary->data = (Node**)realloc(dictionary->data, dictionary->n_bins*2*sizeof(Node*));	
 		dictionary->n_bins =dictionary->n_bins*2;
-
+		for(int i=dictionary->n_bins/2; i<dictionary->n_bins; i++)
+			dictionary->data[i]=NULL;
+	
 		//Save elements in temp array
-		Node* list_of_nodes[dictionary->n_entries];
+		Node ** tmp_list_of_nodes = (Node**) malloc(dictionary->n_entries*sizeof(Node*));
 		int counter=0;
+
 
 		for(int i =0; i<dictionary->n_bins;i++)
 		{
 			Node * n = dictionary->data[i];
-			while(n!=NULL)
+			if(n!=NULL)
 			{
-				list_of_nodes[counter] = n;
-				counter++;
-				n = n->next;
+				while(n!=NULL)
+				{
+					tmp_list_of_nodes[counter] = n;
+					counter++;
+					n = n->next;
+				}
+				dictionary->data[i] = NULL;
 			}
-		//Erase old hashes
-			dictionary->data[i] = NULL;
+			//Erase old hashes			
 		}
-
 		//Rehash elements
 		int n_entries = dictionary->n_entries;
 		dictionary->n_entries=0;
 		for (int i=0; i<n_entries;i++)
-			add_word(dictionary,list_of_nodes[i]->word, list_of_nodes[i]->definition);
+			add_word(dictionary,tmp_list_of_nodes[i]->word, tmp_list_of_nodes[i]->definition);
+
+		free(tmp_list_of_nodes);
 	}
+
 
 	unsigned int index = (*(dictionary->hash_algorithm))(word, dictionary->n_bins); 
 
 	//If nothing in the destiny bucket, save there
 	if(dictionary->data[index]==NULL)
 	{
+
 		Node* new_node = create_node(word,definition,index);
 		dictionary->data[index] = new_node;
 		dictionary->n_entries++;
@@ -281,18 +312,37 @@ int add_word(Hashmap *dictionary, char * word, char * definition)
 
 }
 
+int import_file(char * fname, Hashmap * dictionary )
+{
+    FILE* file = fopen(fname, "r"); /* should check the result */
+    char line[WORD_LEN + 3 + DEF_LEN];
+
+    if(file==NULL)
+    	return 1;
+
+    while (fgets(line, sizeof(line), file)) {
+        
+        if(line[strlen(line)-1]=='\n')
+        	line[strlen(line)-1] = '\0';
+
+    	char *word = strtok(line, " ");
+    	char *definition= strtok(NULL, "");
+  
+    	add_word(dictionary, word, definition);
+
+    }
+    fclose(file);
+    return 0;
+}
+
 double calculate_bin_fraction(Hashmap* dictionary)
 {
 	int counter_bins_used =0;
-	for(int i=0; i<dictionary->n_entries; i++)
+	for(int i=0; i<dictionary->n_bins; i++)
 	{
 		if(dictionary->data[i])
-		{
-			printf("no vacio\n");
 			counter_bins_used++;
-		}
-		else
-			printf("vacio\n");
+		
 	}
 	return (double)counter_bins_used/dictionary->n_bins;
 }
@@ -300,7 +350,7 @@ double calculate_bin_fraction(Hashmap* dictionary)
 int calculate_max_entries(Hashmap* dictionary)
 {
 	int max_entries =0;
-	for(int i=0; i<dictionary->n_entries; i++)
+	for(int i=0; i<dictionary->n_bins; i++)
 	{
 		int n_elements_in_current_bin=0;
 		Node * n = dictionary->data[i];
@@ -317,46 +367,116 @@ int calculate_max_entries(Hashmap* dictionary)
 
 int get_stats(Hashmap* dictionary)
 {
-	/*
-Number of possible hash values (bins) currently allowable in the hash table.
-• Occupancy (load factor) of the hash table. Occupancy = Number of entries being stored by hashtable Number of bins allowable in hashtable
-• Fraction of bins that have one or more elements stored there = Number of bins being used in hashtable
-Number of bins allowable in hashtable
-• Maximum number of elements (words) currently stored in any single bin.
-
-	*/
 	int bins = dictionary->n_bins;
 	double occupancy = (double)dictionary->n_entries/dictionary->n_bins;
 	double used_bin_fraction = calculate_bin_fraction(dictionary);
 	int max_entries = calculate_max_entries(dictionary);
-	printf("Bins: %d, Occupancy: %f, Used bin fraction: %f, Max entries in a bin:%d\n",
+	printf("Bins: %d, Occupancy: %f, Used bin fraction: %f, Max entries in a bin: %d\n",
 			bins, occupancy, used_bin_fraction, max_entries);
-
-	return 1;
+	/*In case we want less verbose output:
+	printf("%d,%f,%f,%d\n",
+			bins, occupancy, used_bin_fraction, max_entries);*/
+	return 0;
 }
+
+
+
+Hashmap* create_empty_dictionary(unsigned int (*hash_algorithm)(char*, int))
+{
+	Hashmap * dictionary = (Hashmap*)malloc(sizeof(Hashmap));
+	dictionary->data = (Node**)malloc(16*sizeof(Node*));
+	for(int i=0; i<16; i++)
+		dictionary->data[i]=NULL;
+	dictionary->n_bins = 16;
+	dictionary->n_entries = 0;
+	dictionary->hash_algorithm = hash_algorithm;
+	return dictionary;
+}
+
+void print_stats_for_different_dictionaries_and_hashes()
+{
+	Hashmap * dictionary;
+
+	
+	printf("naive_hash\n");
+	dictionary = create_empty_dictionary(&naive_hash);	
+
+	printf("With small dictionary\n");
+	import_file("small_dictionary.txt", dictionary);
+	get_stats(dictionary);
+	clear_dictionary(dictionary); 
+
+	printf("With medium dictionary\n");
+	import_file("medium_dictionary.txt", dictionary);
+	get_stats(dictionary);
+	clear_dictionary(dictionary);
+	
+	printf("With large dictionary\n");
+	import_file("large_dictionary.txt", dictionary);
+	get_stats(dictionary);
+	clear_dictionary(dictionary);
+
+	free(dictionary);
+	printf("\n");
+
+	printf("bernstein_hash\n");
+	dictionary = create_empty_dictionary(&bernstein_hash);
+	
+	printf("With small dictionary\n");
+	import_file("small_dictionary.txt", dictionary);
+	get_stats(dictionary);
+	clear_dictionary(dictionary);
+
+	printf("With medium dictionary\n");
+	import_file("medium_dictionary.txt", dictionary);
+	get_stats(dictionary);
+	clear_dictionary(dictionary);
+	
+	printf("With large dictionary\n");
+	import_file("large_dictionary.txt", dictionary);
+	get_stats(dictionary);
+	clear_dictionary(dictionary);
+
+	free(dictionary);	
+	printf("\n");
+
+	printf("FNV_hash\n");
+	dictionary = create_empty_dictionary(&FNV_hash);
+
+	printf("With small dictionary\n");
+	import_file("small_dictionary.txt", dictionary);
+	get_stats(dictionary);
+	clear_dictionary(dictionary);
+	
+	printf("With medium dictionary\n");
+	import_file("medium_dictionary.txt", dictionary);
+	get_stats(dictionary);
+	clear_dictionary(dictionary);
+	
+	printf("With large dictionary\n");
+	import_file("large_dictionary.txt", dictionary);
+	get_stats(dictionary);
+	clear_dictionary(dictionary);
+	
+	free(dictionary);
+}
+
 
 
 
 int main(int argc, char **argv)
 {
 	int algorithm = atoi(argv[1]);
-
-	//Instantiate inicial hashmap with 16 bins
-	Hashmap * dictionary = NULL;
-	dictionary = (Hashmap*)malloc(sizeof(Hashmap));
-	dictionary->data = (Node**)malloc(16*sizeof(Node*));
-	for(int i=0; i<16; i++)
-		dictionary->data[i]=NULL;
-	dictionary->n_bins = 16;
-	dictionary->n_entries = 0;
+	Hashmap * dictionary; 
 	
 	if(algorithm==1)
-		dictionary->hash_algorithm = &naive_hash;
+		dictionary = create_empty_dictionary(&naive_hash);
 	else if (algorithm==2)
-		dictionary->hash_algorithm = &bernstein_hash;
+		dictionary = create_empty_dictionary(&bernstein_hash);
 	else
-		dictionary->hash_algorithm = &FNV_hash;
+		dictionary = create_empty_dictionary(&FNV_hash);
 
+	//print_stats_for_different_dictionaries_and_hashes();
 
 	while(1)
 	{
@@ -393,7 +513,6 @@ int main(int argc, char **argv)
 		{
 			char fname[DEF_LEN];
 			scanf("%s",fname);
-			printf("eee\n");
 			error = import_file(fname, dictionary );
 			if( error == 0 )
 				printf("The file \"%s\" has been imported successfully.\n", fname);
@@ -437,6 +556,10 @@ int main(int argc, char **argv)
 			if(error)
 				printf("Error when calculating stats");
 		}
+		/* Print 2*/
+		if( strncmp(command, "print2", COMMAND_LEN) == 0 )
+			print_dictionary2(dictionary);
+		
 	}
 
 	return 0;

@@ -1,3 +1,4 @@
+#CFLAGS = -g
 CFLAGS = -Wall -O2
 CC = gcc
 

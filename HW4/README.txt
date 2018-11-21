@@ -4,7 +4,14 @@ Starting Framework
 Include any notes on your implementation
 in this file.
 
-Student Name:
-Student Email:
+Student Name: Felipe Alamos
+Student Email: fhalamos@uchicago.edu
 
 Notes:
+
+#P2
+
+
+
+Algorithm 1
+
