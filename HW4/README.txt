@@ -10,6 +10,10 @@ Student Email: fhalamos@uchicago.edu
 Notes:
 
 #P2
+Results in p2.pdf
+
+#P3
+https://cboard.cprogramming.com/c-programming/78170-calculating-next-prime-number.html
 
 
 

@@ -9,7 +9,7 @@ obj = $(source:.c=)
 all: $(obj)
 
 $(obj): %: %.c
-	$(CC) $(CFLAGS) -o $@ $<
+	$(CC) $(CFLAGS) -o $@ $< -lm
 
 clean:
 	rm -f $(obj)

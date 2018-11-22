@@ -1,17 +1,21 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
+#include<math.h>
 
 #define WORD_LEN 64
 #define DEF_LEN 1024
 #define COMMAND_LEN 32 
+
+//Max length of all words in dictionary
+#define MAX_WORD_LENGTH 20
 
 int equal_words(char *str1, char* str2)
 {
 	if(strlen(str1)== strlen(str2) && strncmp(str1,str2,strlen(str2))==0)
 		return 1;
 	else
-		return 0;
+		return 0; 
 }
 
 typedef struct node{
@@ -26,35 +30,109 @@ typedef struct hashmap{
 	int n_bins;
 	int n_entries;
 
-    unsigned int (*hash_algorithm)(char*, int); 
+    unsigned int (*hash_algorithm)(char*, int, int*); 
+
+	//vector of random integer values, defines each specific hash function
+    int * a;
+
+    int max_entries_in_bin;
+
   
 } Hashmap;
 
+/* Function that checks whether or not a given number is
+ * a prime number or not. */
+int is_prime(int input){
+    int i;
+ 
+    int prime = 1;
+ 
+    if(input == 2){
+        return 1;
+    }
+ 
+    if(input%2 == 0 || input <= 1){
+        prime = 0;
+    } else {
+        for(i=3; i<=sqrt(input); i+=2){
+            if(input%i == 0){
+                prime = 0;
+            }
+        }
+    }
+    return prime;
+}
+
+/* Function for determining the next prime number */
+int next_prime_number(int i){
+     
+    int nextPrimeNumber;
+ 
+    nextPrimeNumber = i + 1;
+
+    /* if the number is even, make it odd (2 is special case) */
+    if(nextPrimeNumber%2 == 0 && nextPrimeNumber != 2){ 
+        nextPrimeNumber+=1;
+    }
+
+    /* while its not a prime number, check the next odd number */
+    while(!is_prime(nextPrimeNumber)){
+        nextPrimeNumber+=2;
+    }
+
+    return nextPrimeNumber;
+}
+ 
+
+int dot_product(int *a, int *b, int r)
+{
+	int sum=0;
+	for (int i = 0; i < r; ++i)
+		sum+=a[i]*b[i];
+	return sum;
+}
+
+
+void fill_array_a(Hashmap* dictionary)
+{
+	time_t t;
+	srand((unsigned) time(&t));
+
+	//Fill up the random integers array a
+    for (int i = 0; i < MAX_WORD_LENGTH; ++i)
+    {
+    	dictionary->a[i] = 	rand() % dictionary->n_bins;
+    	//printf("dictionary->a[%d]: %d\n", i, dictionary->a[i] );
+    }
+}
+
 //int max=0;
-unsigned int naive_hash(char * word, int nbins)
+unsigned int naive_hash(char * word, int nbins, int* a)
 {
 	unsigned int h = 0;
 	int c;
 
-	char * w_copy = malloc(strlen(word) + 1); 
-	strcpy(w_copy, word);
+	//In case we want to calculate the max index, uncomment code
+
+	//char * w_copy = malloc(strlen(word) + 1); 
+	//strcpy(w_copy, word);
 
 	while(c = *word++)
 		h += c;
 
-	/*In case we want to calculate the max index:
+	/*
 	if(h>max)
 	{
 		max=h;
 		printf("new max, word %s, max %d\n", w_copy, max);
 	}
 	*/
-	free(w_copy);
+	//free(w_copy);
 
 	return h % nbins;
 }
 
-unsigned int bernstein_hash(char * word, int nbins)
+unsigned int bernstein_hash(char * word, int nbins, int* a)
 {
 	unsigned int h = 5381;
 	int c;
@@ -63,7 +141,7 @@ unsigned int bernstein_hash(char * word, int nbins)
 	return h % nbins;
 }
 
-unsigned int FNV_hash(char * word, int nbins)
+unsigned int FNV_hash(char * word, int nbins, int* a)
 {
 	unsigned long h = 14695981039346656037lu;
 	char c;
@@ -76,9 +154,28 @@ unsigned int FNV_hash(char * word, int nbins)
 }
 
 
+
+unsigned int universal_hash(char * word, int n_bins, int* a)
+{
+	//k is the key vector, of length r, with each entry containing an
+	//integer value ki < s.
+	int * k = (int *) malloc(MAX_WORD_LENGTH*sizeof(int));
+	for (int i = 0; i < MAX_WORD_LENGTH; ++i)
+	{
+		if(i < strlen(word))
+			k[i] = (int)word[i]%n_bins;
+		else
+			k[i] = 0;
+	}
+
+	int dot_prod_mod = dot_product(a,k,MAX_WORD_LENGTH) % n_bins;
+	free(k);
+	return dot_prod_mod;
+}
+
 int find_word(Hashmap* dictionary, char * word)
 {
-	unsigned int index = (*(dictionary->hash_algorithm))(word, dictionary->n_bins); 
+	unsigned int index = (*(dictionary->hash_algorithm))(word, dictionary->n_bins, dictionary->a); 
 
 	Node* n = dictionary->data[index];
 
@@ -97,7 +194,7 @@ int find_word(Hashmap* dictionary, char * word)
 
 int delete_word(Hashmap* dictionary, char * word)
 {
-	unsigned int index = (*(dictionary->hash_algorithm))(word, dictionary->n_bins); 
+	unsigned int index = (*(dictionary->hash_algorithm))(word, dictionary->n_bins, dictionary->a); 
 
 	Node* n = dictionary->data[index];
 
@@ -147,9 +244,6 @@ void clear_dictionary(Hashmap * dictionary)
 	dictionary->n_entries=0;
 	dictionary->n_bins=16;
 }
-
-
-
 
 int comparator(const void *p, const void *q) 
 {
@@ -224,62 +318,78 @@ Node* create_node(char * word, char* definition, int index)
 	return new_node;
 }
 
+void rehash_all_elements(Hashmap* dictionary)
+{
+	//Save elements in temp array
+	Node ** tmp_list_of_nodes = (Node**) malloc(dictionary->n_entries*sizeof(Node*));
+	int counter=0;
+	for(int i =0; i<dictionary->n_bins;i++)
+	{
+		Node * n = dictionary->data[i];
+		if(n!=NULL)
+		{
+			while(n!=NULL)
+			{
+				tmp_list_of_nodes[counter] = n;
+				counter++;
+				n = n->next;
+			}
+			//Erase old hashes	
+			dictionary->data[i] = NULL;
+		}
+	
+	}
+	//Rehash elements
+	int n_entries = dictionary->n_entries;
+	dictionary->n_entries=0;
+	dictionary->max_entries_in_bin=0;
+	for (int i=0; i<n_entries;i++)
+		add_word(dictionary,tmp_list_of_nodes[i]->word, tmp_list_of_nodes[i]->definition);
+
+	free(tmp_list_of_nodes);
+}
+
+
 int add_word(Hashmap *dictionary, char * word, char * definition)
 {
-	//If, when adding new word, load factor >= 0.75, resize hashmap
-
+	//If load_factor>0.75 double bins in dictionary and rehash all elements	
 	double load_factor;
 	load_factor = (double)(dictionary->n_entries+1)/dictionary->n_bins;
-
-	//If condition, double bins in dictionary and rehash all elements	
 	if(load_factor>=0.75)
 	{
 
-		//Double number of bins
-		dictionary->data = (Node**)realloc(dictionary->data, dictionary->n_bins*2*sizeof(Node*));	
-		dictionary->n_bins =dictionary->n_bins*2;
-		for(int i=dictionary->n_bins/2; i<dictionary->n_bins; i++)
+		int old_size = dictionary->n_bins;
+		int new_size;
+		if(dictionary->hash_algorithm!=&universal_hash)		
+			new_size = dictionary->n_bins*2;
+		else //In case we are in universal hashing
+			new_size = next_prime_number(dictionary->n_bins*2);
+
+		//Create new space
+		dictionary->data = (Node**)realloc(dictionary->data, new_size*sizeof(Node*));	
+		dictionary->n_bins = new_size;
+		for(int i=old_size; i<new_size; i++)
 			dictionary->data[i]=NULL;
-	
-		//Save elements in temp array
-		Node ** tmp_list_of_nodes = (Node**) malloc(dictionary->n_entries*sizeof(Node*));
-		int counter=0;
 
+		//In case of universal hash, generate new array a
+		if(dictionary->hash_algorithm==&universal_hash)	
+			fill_array_a(dictionary);
 
-		for(int i =0; i<dictionary->n_bins;i++)
-		{
-			Node * n = dictionary->data[i];
-			if(n!=NULL)
-			{
-				while(n!=NULL)
-				{
-					tmp_list_of_nodes[counter] = n;
-					counter++;
-					n = n->next;
-				}
-				dictionary->data[i] = NULL;
-			}
-			//Erase old hashes			
-		}
-		//Rehash elements
-		int n_entries = dictionary->n_entries;
-		dictionary->n_entries=0;
-		for (int i=0; i<n_entries;i++)
-			add_word(dictionary,tmp_list_of_nodes[i]->word, tmp_list_of_nodes[i]->definition);
-
-		free(tmp_list_of_nodes);
+		rehash_all_elements(dictionary);
 	}
 
 
-	unsigned int index = (*(dictionary->hash_algorithm))(word, dictionary->n_bins); 
+	unsigned int index = (*(dictionary->hash_algorithm))(word, dictionary->n_bins, dictionary->a); 
 
 	//If nothing in the destiny bucket, save there
 	if(dictionary->data[index]==NULL)
 	{
-
 		Node* new_node = create_node(word,definition,index);
 		dictionary->data[index] = new_node;
 		dictionary->n_entries++;
+
+		if(dictionary->max_entries_in_bin==0)
+			dictionary->max_entries_in_bin=1;
 	}
 
 	//If word is already in bucket
@@ -292,8 +402,10 @@ int add_word(Hashmap *dictionary, char * word, char * definition)
 	else 
 	{
 		Node* last_node = dictionary->data[index];
+		int entries_in_bin=1;
 		while(last_node->next!=NULL)
 		{
+			entries_in_bin++;
 			last_node = last_node->next;
 
 			if(last_node && equal_words(last_node->word,word))
@@ -305,12 +417,32 @@ int add_word(Hashmap *dictionary, char * word, char * definition)
 		
 		Node * new_node= create_node(word, definition, index);
 		last_node->next = new_node;
+		entries_in_bin++;
 		dictionary->n_entries++;
+
+
+		if(	dictionary->hash_algorithm==&universal_hash &&
+			dictionary->max_entries_in_bin < entries_in_bin)
+			
+			dictionary->max_entries_in_bin = entries_in_bin;
 	}
+
+
+
+	if(	dictionary->max_entries_in_bin > dictionary->n_entries*0.25 &&
+		dictionary->n_entries > 10)
+	{
+		fill_array_a(dictionary);
+		rehash_all_elements(dictionary);
+	}
+
+	//get_stats(dictionary);
 
 	return 0;
 
 }
+
+
 
 int import_file(char * fname, Hashmap * dictionary )
 {
@@ -381,15 +513,25 @@ int get_stats(Hashmap* dictionary)
 
 
 
-Hashmap* create_empty_dictionary(unsigned int (*hash_algorithm)(char*, int))
+Hashmap* create_empty_dictionary(unsigned int (*hash_algorithm)(char*, int, int*), int n_bins)
 {
 	Hashmap * dictionary = (Hashmap*)malloc(sizeof(Hashmap));
-	dictionary->data = (Node**)malloc(16*sizeof(Node*));
-	for(int i=0; i<16; i++)
+	dictionary->data = (Node**)malloc(n_bins*sizeof(Node*));
+	for(int i=0; i<n_bins; i++)
 		dictionary->data[i]=NULL;
-	dictionary->n_bins = 16;
+	dictionary->n_bins = n_bins;
+
 	dictionary->n_entries = 0;
+	dictionary->max_entries_in_bin=0;
+
 	dictionary->hash_algorithm = hash_algorithm;
+
+	if(hash_algorithm == &universal_hash)
+	{
+	    dictionary->a = (int *) malloc(MAX_WORD_LENGTH*sizeof(int));
+    	fill_array_a(dictionary);
+	}
+	
 	return dictionary;
 }
 
@@ -399,7 +541,7 @@ void print_stats_for_different_dictionaries_and_hashes()
 
 	
 	printf("naive_hash\n");
-	dictionary = create_empty_dictionary(&naive_hash);	
+	dictionary = create_empty_dictionary(&naive_hash, 16);	
 
 	printf("With small dictionary\n");
 	import_file("small_dictionary.txt", dictionary);
@@ -420,7 +562,7 @@ void print_stats_for_different_dictionaries_and_hashes()
 	printf("\n");
 
 	printf("bernstein_hash\n");
-	dictionary = create_empty_dictionary(&bernstein_hash);
+	dictionary = create_empty_dictionary(&bernstein_hash, 16);
 	
 	printf("With small dictionary\n");
 	import_file("small_dictionary.txt", dictionary);
@@ -441,7 +583,7 @@ void print_stats_for_different_dictionaries_and_hashes()
 	printf("\n");
 
 	printf("FNV_hash\n");
-	dictionary = create_empty_dictionary(&FNV_hash);
+	dictionary = create_empty_dictionary(&FNV_hash, 16);
 
 	printf("With small dictionary\n");
 	import_file("small_dictionary.txt", dictionary);
@@ -470,11 +612,14 @@ int main(int argc, char **argv)
 	Hashmap * dictionary; 
 	
 	if(algorithm==1)
-		dictionary = create_empty_dictionary(&naive_hash);
+		dictionary = create_empty_dictionary(&naive_hash, 16);
 	else if (algorithm==2)
-		dictionary = create_empty_dictionary(&bernstein_hash);
+		dictionary = create_empty_dictionary(&bernstein_hash, 16);
+	else if (algorithm==3)
+		dictionary = create_empty_dictionary(&FNV_hash, 16);
 	else
-		dictionary = create_empty_dictionary(&FNV_hash);
+		dictionary = create_empty_dictionary(&universal_hash, next_prime_number(MAX_WORD_LENGTH));
+
 
 	//print_stats_for_different_dictionaries_and_hashes();
 
