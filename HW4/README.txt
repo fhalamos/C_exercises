@@ -10,6 +10,7 @@ Student Email: fhalamos@uchicago.edu
 Notes:
 
 #P2
+Run compare command to get results.
 Results in p2.pdf
 
 #P3

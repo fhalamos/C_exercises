@@ -100,10 +100,7 @@ void fill_array_a(Hashmap* dictionary)
 
 	//Fill up the random integers array a
     for (int i = 0; i < MAX_WORD_LENGTH; ++i)
-    {
     	dictionary->a[i] = 	rand() % dictionary->n_bins;
-    	//printf("dictionary->a[%d]: %d\n", i, dictionary->a[i] );
-    }
 }
 
 //int max=0;
@@ -255,8 +252,8 @@ int comparator(const void *p, const void *q)
 
 void print_dictionary(Hashmap* dictionary)
 {
-	printf("bins: %d\n", dictionary->n_bins);
-	printf("entries: %d\n", dictionary->n_entries);
+	//printf("n_bins: %d\n", dictionary->n_bins);
+	//printf("n_entries: %d\n", dictionary->n_entries);
 
 	Node ** allNodes = (Node**) malloc(dictionary->n_entries*sizeof(Node*));
 	int counter=0;
@@ -287,7 +284,8 @@ void print_dictionary(Hashmap* dictionary)
 }
 
 //Used to print empty bins too and see distribution of words in bins.
-void print_dictionary2(Hashmap* dictionary)
+//not orderes alphabetically but by bin number
+void print_dictionary_with_empty_bins(Hashmap* dictionary)
 {
 	printf("bins: %d\n", dictionary->n_bins);
 	printf("entries: %d\n", dictionary->n_entries);
@@ -621,8 +619,6 @@ int main(int argc, char **argv)
 		dictionary = create_empty_dictionary(&universal_hash, next_prime_number(MAX_WORD_LENGTH));
 
 
-	//print_stats_for_different_dictionaries_and_hashes();
-
 	while(1)
 	{
 		int error;
@@ -701,9 +697,14 @@ int main(int argc, char **argv)
 			if(error)
 				printf("Error when calculating stats");
 		}
-		/* Print 2*/
+
+		/* Compare hash functions*/
+		if( strncmp(command, "compare", COMMAND_LEN) == 0 )
+			print_stats_for_different_dictionaries_and_hashes();
+		
+		/* Print with empty bins*/
 		if( strncmp(command, "print2", COMMAND_LEN) == 0 )
-			print_dictionary2(dictionary);
+			print_dictionary_with_empty_bins(dictionary);
 		
 	}
 
