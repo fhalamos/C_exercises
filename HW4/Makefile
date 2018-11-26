@@ -1,5 +1,4 @@
-#CFLAGS = -g
-CFLAGS = -Wall -O2
+CFLAGS = -Wall -O2 -std=gnu99
 CC = gcc
 
 source=$(wildcard *.c)
