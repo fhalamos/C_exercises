@@ -103,28 +103,13 @@ void fill_array_a(Hashmap* dictionary)
     	dictionary->a[i] = 	rand() % dictionary->n_bins;
 }
 
-//int max=0;
 unsigned int naive_hash(char * word, int nbins, int* a)
 {
 	unsigned int h = 0;
 	int c;
 
-	//In case we want to calculate the max index, uncomment code
-
-	//char * w_copy = malloc(strlen(word) + 1); 
-	//strcpy(w_copy, word);
-
 	while(c = *word++)
 		h += c;
-
-	/*
-	if(h>max)
-	{
-		max=h;
-		printf("new max, word %s, max %d\n", w_copy, max);
-	}
-	*/
-	//free(w_copy);
 
 	return h % nbins;
 }
@@ -278,7 +263,7 @@ void print_dictionary(Hashmap* dictionary)
 			comparator);
 
 	for(int i=0; i<dictionary->n_entries;i++)
-		printf("[%d] %s: %s\n", allNodes[i]->bin, allNodes[i]->word, allNodes[i]->definition);
+		printf("%s: %s\n", allNodes[i]->word, allNodes[i]->definition);
 
 	free(allNodes);	
 }
@@ -425,8 +410,6 @@ int add_word(Hashmap *dictionary, char * word, char * definition)
 			dictionary->max_entries_in_bin = entries_in_bin;
 	}
 
-
-
 	if(	dictionary->max_entries_in_bin > dictionary->n_entries*0.25 &&
 		dictionary->n_entries > 10)
 	{
@@ -434,17 +417,14 @@ int add_word(Hashmap *dictionary, char * word, char * definition)
 		rehash_all_elements(dictionary);
 	}
 
-	//get_stats(dictionary);
-
 	return 0;
-
 }
 
 
 
 int import_file(char * fname, Hashmap * dictionary )
 {
-    FILE* file = fopen(fname, "r"); /* should check the result */
+    FILE* file = fopen(fname, "r");
     char line[WORD_LEN + 3 + DEF_LEN];
 
     if(file==NULL)
@@ -471,8 +451,7 @@ double calculate_bin_fraction(Hashmap* dictionary)
 	for(int i=0; i<dictionary->n_bins; i++)
 	{
 		if(dictionary->data[i])
-			counter_bins_used++;
-		
+			counter_bins_used++;	
 	}
 	return (double)counter_bins_used/dictionary->n_bins;
 }
