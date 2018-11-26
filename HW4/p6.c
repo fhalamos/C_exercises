@@ -158,10 +158,44 @@ Student * get_students()
 	strcpy(students[8].name,"Johannes Kepler");
 	
 	students[9].age = 29;
-	students[9].gpa = 4;
+	students[9].gpa = 5;
 	strcpy(students[9].name,"Enrico Fermi");
 
 	return students;
+
+}
+
+//Based on bernstein_hash
+unsigned int hash_particles(const void *key)
+{
+	unsigned int h = 5381;
+	char* keyBytes = (char*)key;
+ 
+	for( size_t i = 0; i < sizeof(Particle); i++)
+		h = 33 * h + keyBytes[i];
+
+	return h % n_bins;
+}
+
+unsigned int hash_students(const void* key)
+{
+	unsigned int h = 5381;
+
+	Student * s = (Student*)key;
+
+	//hash age
+	for(size_t i = 0; i < sizeof(int); i++)
+		h = 33 * h + ((char*)(&s->age))[i];
+
+	//hash name
+	for(size_t i = 0; i < strlen(s->name); i++)
+		h = 33 * h + ((char*)(&s->name))[i];
+
+	//hash gpa
+	for(size_t i = 0; i < sizeof(double); i++)
+		h = 33 * h + ((char*)(&s->gpa))[i];
+	
+	return h % n_bins;
 
 }
 
@@ -169,14 +203,15 @@ void print_particles(Particle* particles, int n)
 {
 	for (int i = 0; i < n; ++i)
 	{
-		printf("Position: (%.2f, %.2f, %.2f) Velocity: (%.2f, %.2f, %.2f) State: %d\n", 
+		printf("Position: (%.2f, %.2f, %.2f) Velocity: (%.2f, %.2f, %.2f) State: %d, hash_value: %u\n", 
 			particles[i].x,
 			particles[i].y,
 			particles[i].z,
 			particles[i].v_x,
 			particles[i].v_y,
 			particles[i].v_z,
-			particles[i].state);
+			particles[i].state,
+			hash_particles(&particles[i]));
 	}
 }
 
@@ -184,10 +219,11 @@ void print_students(Student * students, int n)
 {
 	for (int i = 0; i < n; ++i)
 	{
-		printf("Age: %d GPA: %.2f Name: %s\n",
+		printf("Age: %d GPA: %.2f Name: %s, hash_value: %u\n",
 			students[i].age,
 			students[i].gpa,
-			students[i].name); 
+			students[i].name,
+			hash_students(&students[i])); 
 	}
 }
 
@@ -220,41 +256,12 @@ int equal_students(void * s1, void * s2)
 		return 1;
 	else
 		return 0;
-
 }
 
 
-unsigned int hash_particles(const void *key)
-{
-	Particle* p = (Particle*) key;
 
-	unsigned int h = 5381;
-	
-	h+= 33*h + p->x*100;
-	h+= 33*h + p->y*101;
-	h+= 33*h + p->z*102;
-	h+= 33*h + p->v_x*103;
-	h+= 33*h + p->v_y*104;
-	h+= 33*h + p->v_z*105;
-	h+= 33*h + p->state*106;
-	
-	return h%n_bins;
-}
 
-unsigned int hash_students(const void* key)
-{
-	Student * s = (Student*) key;
 
-	unsigned int h = 5381;
-	h += 33 * h + s->age*101;
-	h += 33 * h + s->gpa*102;
-
-	for (int i = 0; i < strlen(s->name); ++i)
-		h += 33 * h + (int)s->name[i];
-
-	return h%n_bins;
-
-}
 
 
 
@@ -299,12 +306,17 @@ int uniq(void * f, int n, int sz, int (*equals)(void *, void *), unsigned int (*
 
 int main()
 {
+
+
+
 	Particle * particles = get_particles();
 	Student * students = get_students();
 
 	
 	printf("Original List:\n");
 	print_particles(particles,10);
+	
+
 	printf("Unique'd List:\n");
 	int n_unique_particles = uniq(particles, 10, sizeof(Particle), &equal_particles, &hash_particles);
 	print_particles(particles,n_unique_particles);

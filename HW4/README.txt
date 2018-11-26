@@ -10,13 +10,12 @@ Student Email: fhalamos@uchicago.edu
 Notes:
 
 #P2
-Run compare command to get results.
+Run 'compare' command to get results.
 Results in p2.pdf
 
 #P3
+Reference:
 https://cboard.cprogramming.com/c-programming/78170-calculating-next-prime-number.html
 
-
-
-Algorithm 1
-
+#P5
+Sometimes, very rarely, the process is Killed. It seems there is a memory leak somewhere, but could not find it.
