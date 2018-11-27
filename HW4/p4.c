@@ -328,6 +328,9 @@ void rehash_all_elements(Hashmap* dictionary)
 	for (int i=0; i<n_entries;i++)
 		add_word(dictionary,tmp_list_of_nodes[i]->word, tmp_list_of_nodes[i]->definition);
 
+	for (int i = 0; i < n_entries; ++i)
+		free(tmp_list_of_nodes[i]);
+
 	free(tmp_list_of_nodes);
 }
 

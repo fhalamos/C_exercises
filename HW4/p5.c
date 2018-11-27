@@ -626,17 +626,14 @@ void optimize(Hashmap* dictionary)
 	int * best_array = copy_array(dictionary->a);
 
 
-	for(int i=0; i<300; i++)
+	for(int i=0; i<100; i++)
 	{
-		printf("iteration%d\n", i );
 		fill_array_a(dictionary);
 		rehash_all_elements(dictionary);
 		local_max_entries = calculate_max_entries(dictionary);
 
-		//printf("Iteration n: %d\n", i);
 		if(local_max_entries<max_entries)
 		{
-			get_stats(dictionary);
 			max_entries = local_max_entries;
 			free(best_array);
 			best_array = copy_array(dictionary->a);
