@@ -158,7 +158,7 @@ Student * get_students()
 	strcpy(students[8].name,"Johannes Kepler");
 	
 	students[9].age = 29;
-	students[9].gpa = 5;
+	students[9].gpa = 4;
 	strcpy(students[9].name,"Enrico Fermi");
 
 	return students;
