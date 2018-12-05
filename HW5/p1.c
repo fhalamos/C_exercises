@@ -1,7 +1,7 @@
 #include<stdio.h>
 #include<stdlib.h>
-#define NV 6301
-#define NE 20777
+//#define NV 6301
+//#define NE 20777
 #define TRUE 1
 #define FALSE 0
 #define MAXINT 10000000
@@ -14,17 +14,16 @@ typedef struct edgenode {
 } Edgenode;
 
 typedef struct {
-  Edgenode *edges[NV+1];
-  int degree[NV+1];
   int nvertices;
   int nedges;
   int directed;
+  Edgenode **edges;
 } Graph;
 
 void dijkstra(Graph *g, int start, int *distance){
   int i;
   Edgenode *p;
-  int processed[NV+1];
+  int processed[g->nvertices+1];
   int v;
   int w;
   int weight;
@@ -65,11 +64,10 @@ void dijkstra(Graph *g, int start, int *distance){
   }
 }
 
-//Graph *g, int start, int *distance
 void dijkstra_all_src(Graph* g, int** dist)
 {
   //calculate dijkstra from every node_i
-  for (int node_i = 0; node_i < NV; node_i++)
+  for (int node_i = 0; node_i < g->nvertices; node_i++)
   {
     //If the node exists
     if(g->edges[node_i])
@@ -93,34 +91,41 @@ int main(int argc, char **argv){
   char *filename;
   int u,v,w;
   int i;
-
-
-  //Distances from each node to all nodes
-  int** dist = (int**) malloc(NV*sizeof(int*));
-  for (i = 0; i < NV; ++i)
-    dist[i] = (int*) malloc(NV*sizeof(int));
-
-  /* initialize Graph fields */
-  g.nvertices = NV;
-  g.nedges = NE;
-  g.directed = TRUE;
-
-  for (i=0;i<NV;++i)
-    g.edges[i] = NULL;
   
   filename = argv[1];
   file = fopen(filename,"r");
   
-
   //Create graph
+
+  int nv, ne;
+  fscanf(file, "%d %d\n", &nv,&ne);  
+  printf("nv:%d, ne:%d\n",nv,ne );
+
+
+
+  //Distances from each node to all nodes
+  int** dist = (int**) malloc(nv*sizeof(int*));
+  for (i = 0; i < nv; ++i)
+    dist[i] = (int*) malloc(nv*sizeof(int));
+
+
+  /* initialize Graph fields */
+  g.nvertices = nv;
+  g.nedges = ne;
+  g.directed = TRUE;
+  g.edges = (Edgenode**)malloc(nv*sizeof(Edgenode*)); //Sourcecode uses nv+1??
+  for (i=0;i<nv;++i)
+    g.edges[i] = NULL;
+
+
   while ( fscanf(file, "%d %d %d\n", &u,&v,&w) != EOF){
-    printf("A %d %d %d\n", u,v,w);
+    printf("%d %d %d\n", u,v,w);
     Edgenode *new_node = (Edgenode *) malloc(sizeof(Edgenode));          
     Edgenode *prev;
     if (g.edges[u] == NULL){             /* first insertion */
-      g.edges[u]          = new_node;
+      g.edges[u]         = new_node;
       g.edges[u]->y       = v;
-      g.edges[u]-> weight = w;
+      g.edges[u]->weight = w;
       g.edges[u]->next    = NULL;
       prev = new_node;
     }
@@ -135,6 +140,7 @@ int main(int argc, char **argv){
   }
   fclose(file);
 
+  printf("\n");
   dijkstra_all_src(&g, dist);
 
 }
