@@ -47,8 +47,7 @@ MinHeap* createMinHeap(int capacity)
 
   minHeap->pos = (int *)malloc(capacity * sizeof(int));
 
-  minHeap->array = 
-    (MinHeapNode**) malloc(capacity * sizeof(MinHeapNode*)); 
+  minHeap->array = (MinHeapNode**) malloc(capacity * sizeof(MinHeapNode*)); 
   
   return minHeap; 
 } 
@@ -148,6 +147,7 @@ MinHeapNode* extractMin(MinHeap* minHeap)
   // Replace root node with last node 
   MinHeapNode* lastNode = minHeap->array[minHeap->size - 1]; 
   minHeap->array[0] = lastNode; 
+  minHeap->array[minHeap->size - 1] = root; 
 
   // Update position of last node 
   minHeap->pos[root->v] = minHeap->size-1; 
@@ -172,6 +172,16 @@ return 0;
 //END HEAP STRUCTURE
 
 
+void free_heap(MinHeap* minHeap, int n)
+{
+  for (int i = 0; i < n; ++i)
+    free(minHeap->array[minHeap->pos[i]]);
+ 
+  free(minHeap->pos);
+  free(minHeap->array);
+  free(minHeap);
+}
+
 //distance array of with ditances to each of the nodes from start in g
 void dijkstra(Graph *g, int start, int *distance){
   
@@ -180,7 +190,7 @@ void dijkstra(Graph *g, int start, int *distance){
 
 
   /* initialize search table and minheap elements */
-  for (int i=0; i<=g->nvertices; i++) {
+  for (int i=0; i<g->nvertices; i++) {
     
 
     distance[i] = MAXINT;
@@ -236,7 +246,11 @@ void dijkstra(Graph *g, int start, int *distance){
 
       p = p->next;
     }
+
   }
+
+  free_heap(minHeap,g->nvertices);
+
 }
 
 void dijkstra_all_src(Graph* g, int** dist)
@@ -247,15 +261,22 @@ void dijkstra_all_src(Graph* g, int** dist)
     //If the node exists
     if(g->edges[node_i])
     {
-      printf("Dikjsta from node %d\n", node_i);
+      //printf("Dijkstra from node %d\n", node_i);
 
       dijkstra(g, node_i, dist[node_i]);
 
       for (int i=0;i<g->nvertices;++i)
         if(g->edges[i])          
-          printf("d[%d]=%d\n", i,dist[node_i][i]);
-      printf("\n");
+        {
+          //printf("d[%d]=%d\n", i,dist[node_i][i]); 
+        }
+      //printf("\n");
+
     }
+
+    double a = (double)(node_i+1)/(double)g->nvertices*100;
+
+    printf("%d/%d; %.2f%\n", node_i+1, g->nvertices,a);
   }
 }
 
@@ -288,13 +309,14 @@ int main(int argc, char **argv){
   g.nvertices = nv;
   g.nedges = ne;
   g.directed = TRUE;
-  g.edges = (Edgenode**)malloc(nv*sizeof(Edgenode*)); //Sourcecode uses nv+1??
+
+  g.edges = (Edgenode**)malloc((nv)*sizeof(Edgenode*)); //Sourcecode uses nv+1??
   for (i=0;i<nv;++i)
     g.edges[i] = NULL;
 
 
   while ( fscanf(file, "%d %d %d\n", &u,&v,&w) != EOF){
-    printf("%d %d %d\n", u,v,w);
+    //printf("%d %d %d\n", u,v,w);
     Edgenode *new_node = (Edgenode *) malloc(sizeof(Edgenode));          
     Edgenode *prev;
     if (g.edges[u] == NULL){             /* first insertion */
