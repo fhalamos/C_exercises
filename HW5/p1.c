@@ -1,7 +1,7 @@
 #include<stdio.h>
 #include<stdlib.h>
-//#define NV 6301
-//#define NE 20777
+#include<time.h>
+
 #define TRUE 1
 #define FALSE 0
 #define MAXINT 10000000
@@ -175,7 +175,7 @@ return 0;
 void free_heap(MinHeap* minHeap, int n)
 {
   for (int i = 0; i < n; ++i)
-    free(minHeap->array[minHeap->pos[i]]);
+    free(minHeap->array[i]);
  
   free(minHeap->pos);
   free(minHeap->array);
@@ -250,7 +250,6 @@ void dijkstra(Graph *g, int start, int *distance){
   }
 
   free_heap(minHeap,g->nvertices);
-
 }
 
 void dijkstra_all_src(Graph* g, int** dist)
@@ -268,9 +267,9 @@ void dijkstra_all_src(Graph* g, int** dist)
       for (int i=0;i<g->nvertices;++i)
         if(g->edges[i])          
         {
-          //printf("d[%d]=%d\n", i,dist[node_i][i]); 
+          printf("d[%d]=%d\n", i,dist[node_i][i]); 
         }
-      //printf("\n");
+      printf("\n");
 
     }
 
@@ -338,6 +337,22 @@ int main(int argc, char **argv){
   fclose(file);
 
   printf("\n");
-  dijkstra_all_src(&g, dist);
 
+
+
+  struct timespec start, finish;
+  double elapsed;
+
+  clock_gettime(CLOCK_MONOTONIC, &start);
+  
+  dijkstra_all_src(&g, dist);
+  //dijkstra(&g, 0, dist[0]);
+
+  clock_gettime(CLOCK_MONOTONIC, &finish);
+
+  elapsed = (finish.tv_sec - start.tv_sec);
+  elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
+  printf("Work time:%f sec\n", elapsed);
+
+  
 }
