@@ -33,3 +33,6 @@ http://heather.cs.ucdavis.edu/~matloff/OpenMP/Examples/NM/Dijkstra.c
 #P4
 -Used dfs.c from class dropbox as based
 -https://www.geeksforgeeks.org/gcd-two-array-numbers/
+
+#P5
+-https://www.geeksforgeeks.org/connectivity-in-a-directed-graph/
