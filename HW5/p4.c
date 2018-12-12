@@ -34,17 +34,11 @@ int discovered[MAXV+1];  /* which vertices have been found */
 int parent[MAXV+1];      /* discovery relation */
 int level[MAXV+1];       /* level of each node */           
 
-void process_vertex_late(int v){
-  
-}
 
 void process_vertex_early(int v){
   printf("processed vertex %d, level is %d\n",v,level[v]);
 }
 
-void process_edge(int x, int y){
-
-}
 
 void dfs(Graph *g, int v, int l){
   Edgenode *p;
@@ -59,20 +53,12 @@ void dfs(Graph *g, int v, int l){
   while (p != NULL) {          /* loop over all edges */
     y = p->y;
     if (discovered[y] == 0) {
-      //printf("QUE!\n");
       parent[y] = v;
-      process_edge(v,y);
       dfs(g,y,l+1);
-    }
-    else if ((!processed[y] && (parent[v] != y)) || (g->directed))
-    {
-      //printf("WHAT!\n");
-      process_edge(v,y);
     }
 
     p = p->next;
   }
-  process_vertex_late(v);
   processed[v] = 1;
 }
 
