@@ -12,13 +12,12 @@ file p4.c
 #include<time.h>
 #include<string.h>
 
-#define MAXV 1000000
 #define MAX_LINES 1000
 #define MAX_CHAR_PER_LINE 1000
 
 typedef struct edgenode {
   int y;
-  int weight;
+  double weight;
   struct edgenode *next;
 } Edgenode;
 
@@ -29,37 +28,27 @@ typedef struct {
   Edgenode **edges;
 } Graph;
 
-int processed[MAXV+1];   /* which vertices have been processed */
-int discovered[MAXV+1];  /* which vertices have been found */
-int parent[MAXV+1];      /* discovery relation */
-int level[MAXV+1];       /* level of each node */           
 
 
-void process_vertex_early(int v){
-  printf("processed vertex %d, level is %d\n",v,level[v]);
-}
 
-
-void dfs(Graph *g, int v, int l){
+void dfs(Graph *g, int v, int l, int* discovered, int* level){
   Edgenode *p;
   int y;
   
   discovered[v] = 1;        /* starting vertex v */
   level[v] = l;
 
-  process_vertex_early(v);     /* print v */
+  //printf("processed vertex %d, level is %d\n",v,level[v]);
   p = g->edges[v];             /* get list of edges from v */
   
   while (p != NULL) {          /* loop over all edges */
     y = p->y;
-    if (discovered[y] == 0) {
-      parent[y] = v;
-      dfs(g,y,l+1);
-    }
+    if (discovered[y] == 0)
+      dfs(g,y,l+1,discovered,level);
 
     p = p->next;
   }
-  processed[v] = 1;
+
 }
 
 // Function to return gcd of a and b 
@@ -87,7 +76,10 @@ void graph_period(Graph * g)
   int k_e [g->nedges];
   int edge_counter=0;
 
-  dfs(g,1,0);
+  int discovered[g->nvertices+1];  /* which vertices have been found */
+  int level[g->nvertices+1];       /* level of each node */           
+
+  dfs(g,1,0, discovered, level);
 
   for (int i = 1; i <= g->nvertices; ++i)
   {
@@ -132,6 +124,25 @@ int read_file(char *filename, char text[][MAX_CHAR_PER_LINE])
   return linesCounter;
 }
 
+void add_edge_to_graph(Graph * g, int u, int v, int w)
+{
+  Edgenode *new_node = (Edgenode *) malloc(sizeof(Edgenode)); 
+  new_node->y         = v;
+  new_node->weight    = w;
+  new_node->next      = NULL;
+
+  Edgenode *last_node = g->edges[u];
+  if (g->edges[u] == NULL){            
+    g->edges[u] = new_node;
+  }
+  else{
+    while(last_node->next != NULL)
+      last_node = last_node->next;
+
+    last_node->next = new_node;
+  }
+}
+
 Graph * initialize_graph_from_file(char* filename)
 {
   Graph * g = (Graph*) malloc(sizeof(Graph));
@@ -139,7 +150,6 @@ Graph * initialize_graph_from_file(char* filename)
   char text[MAX_LINES][MAX_CHAR_PER_LINE];
   int nv = read_file(filename,text);
   
-  printf("nv %d\n", nv);
   //Create graph
 
   /* initialize Graph fields */
@@ -159,7 +169,7 @@ Graph * initialize_graph_from_file(char* filename)
   {
     char *token = strtok(text[i], " "); 
     int u = atoi(token);
-    printf("Source_node: %d\n", u);
+    //printf("Source_node: %d\n", u);
 
     while (token != NULL) 
     {  
@@ -175,32 +185,19 @@ Graph * initialize_graph_from_file(char* filename)
         if(token)
         {
           w = atof(token);
-          printf("%d %f\n", v, w);
+          //printf("%d %f\n", v, w);
+
+          add_edge_to_graph(g,u,v,w);
 
           n_edges++;
-          Edgenode *new_node = (Edgenode *) malloc(sizeof(Edgenode)); 
-          Edgenode *prev;
-          if (g->edges[u] == NULL){            
-            g->edges[u]         = new_node;
-            g->edges[u]->y       = v;
-            g->edges[u]->weight = w;
-            g->edges[u]->next    = NULL;
-            prev = new_node;
-          }
-          else{
-            prev->next          = new_node;
-            new_node->y         = v;
-            new_node->weight    = w;
-            new_node->next      = NULL;
-            prev                = new_node;
-          }
+
         }
       }
     } 
   }
 
   g->nedges = n_edges;
-  printf("nedges%d\n",n_edges );
+  
   return g;
 }
 
