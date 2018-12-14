@@ -29,7 +29,7 @@ typedef struct {
 } Graph;
 
 
-void add_edge_to_graph(Graph * g, int u, int v, int w)
+void add_edge_to_graph(Graph * g, int u, int v, double w)
 {
   Edgenode *new_node = (Edgenode *) malloc(sizeof(Edgenode)); 
   new_node->y         = v;
@@ -45,7 +45,7 @@ void add_edge_to_graph(Graph * g, int u, int v, int w)
       last_node = last_node->next;
 
     last_node->next = new_node;
-  }
+  } 
 }
 
 void dfs(Graph *g, int v, int l, int* discovered, int* level){

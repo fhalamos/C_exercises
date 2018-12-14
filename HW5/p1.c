@@ -267,15 +267,13 @@ void dijkstra_all_src(Graph* g, int** dist)
       for (int i=0;i<g->nvertices;++i)
         if(g->edges[i])          
         {
-          printf("d[%d]=%d\n", i,dist[node_i][i]); 
+          //printf("d[%d]=%d\n", i,dist[node_i][i]); 
         }
-      printf("\n");
+      //printf("\n");
 
     }
-
-    double a = (double)(node_i+1)/(double)g->nvertices*100;
-
-    printf("%d/%d; %.2f%\n", node_i+1, g->nvertices,a);
+    //double a = (double)(node_i+1)/(double)g->nvertices*100;
+    //printf("%d/%d; %.2f%\n", node_i+1, g->nvertices,a);
   }
 }
 
@@ -352,7 +350,5 @@ int main(int argc, char **argv){
 
   elapsed = (finish.tv_sec - start.tv_sec);
   elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
-  printf("Work time:%f sec\n", elapsed);
-
-  
+  printf("Work time serial:%f sec\n", elapsed);  
 }

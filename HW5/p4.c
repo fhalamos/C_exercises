@@ -28,9 +28,6 @@ typedef struct {
   Edgenode **edges;
 } Graph;
 
-
-
-
 void dfs(Graph *g, int v, int l, int* discovered, int* level){
   Edgenode *p;
   int y;
@@ -124,7 +121,7 @@ int read_file(char *filename, char text[][MAX_CHAR_PER_LINE])
   return linesCounter;
 }
 
-void add_edge_to_graph(Graph * g, int u, int v, int w)
+void add_edge_to_graph(Graph * g, int u, int v, double w)
 {
   Edgenode *new_node = (Edgenode *) malloc(sizeof(Edgenode)); 
   new_node->y         = v;

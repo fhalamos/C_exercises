@@ -126,14 +126,6 @@ Graph * initialize_graph_from_file(char* filename)
   return g;
 }
 
-void print_array(int* a, int n)
-{
-  for (int i = 0; i <= n; ++i)
-  {
-    printf("%d\n", a[i]);
-  }
-  printf("\n");
-}
 
 double * generate_CDF(Graph* g, int a)
 {
@@ -176,10 +168,7 @@ int random_jump_in_chain(Graph * g, int a)
     if(cdf[i]>=u)
       return i;
   }
-
-//  printf("We should never print this message\n");
-  //printf("u: %f\n", u);
-  //printf("cdf[100]%f\n", cdf[100]);
+  //We shouldnt get to this point if rows sum up to 1, but in some cases they dont.
   return g->nvertices;
 }
 
@@ -213,7 +202,7 @@ void calculate_stationary_probabilities(Graph* g, int n)
 
   for (int i = 1; i <= g->nvertices; ++i)
   {
-    printf("Pi_%d: %f\n", i, visits_counter[i]/n);
+    printf("Pi_%d: %f, ", i, visits_counter[i]/n);
   }
 }
 
@@ -226,6 +215,6 @@ int main ()
   
   g = initialize_graph_from_file(filename);
   
-  calculate_stationary_probabilities(g,100000);
+  calculate_stationary_probabilities(g,1000000);
 
 }
