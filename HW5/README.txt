@@ -36,6 +36,10 @@ What do the answer to the previous two questions tell you about the values that 
 
 We know that in an aperiodic and irreducible graph, stationaries probabilities exist. But, the graph we are studying is not aperiodic and still has stationary probabilities. Hence, in an irreducible graph, aperiodicity is a sufficient, but not necessary, condition for existance of stationary probabilities.
 
+#P7
+-Call the program through /p7 n, where n is the dimension of squared matrix A.
+-The matrix A and vector b are generated automatically with random numbers. If they happen to generate a sistem of equation with infinite or non solutions, just run the program again. In most cases this will not happen.
+
 --------------------
 
 References:
@@ -53,3 +57,6 @@ http://heather.cs.ucdavis.edu/~matloff/OpenMP/Examples/NM/Dijkstra.c
 
 #P5
 -https://www.geeksforgeeks.org/connectivity-in-a-directed-graph/
+
+#P7
+-https://www.codewithc.com/c-program-for-gauss-elimination-method/
