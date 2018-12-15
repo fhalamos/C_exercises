@@ -17,7 +17,7 @@ Work time parallel (openmp):6.708205 sec, on small graph.
 The lack of syncronization between processes makes or parallel algorithm very efficient compared to the serial version.
 
 #P3
-======================++++++++++PENDIENTEEEEEEEEEEEE!!!
+Run out of time to do this exercise.
 
 #P4
 GCD of markov-graph is 2
@@ -66,6 +66,9 @@ http://heather.cs.ucdavis.edu/~matloff/OpenMP/Examples/NM/Dijkstra.c
 
 #P7
 -https://www.codewithc.com/c-program-for-gauss-elimination-method/
+
+#P8
+-https://es.wikipedia.org/wiki/Algoritmo_para_matrices_tridiagonales
 
 #P9
 -https://www.cs.rutgers.edu/~venugopa/parallel_summer2012/ge.html
