@@ -17,13 +17,13 @@ double ** generate_matrix(int n)
 	time_t t; 
 	//Intializes random number generator
 	srand((unsigned) time(&t));
-	double a=rand()%10;
+	double a=rand()%10+1;
 	for (int i = 0; i < n; ++i)
 	{
 		for (int j = 0; j < n; ++j)
 		{
 			matrix[i][j]=a;
-			a=rand()%10;//(i+j)+6*i+1+i%2;
+			a=rand()%10+1;
 		}
 	}
 	return matrix;
@@ -33,7 +33,7 @@ double* generate_vector(int n)
 {
 	double* b = (double*) malloc(n*sizeof(double));
 	for (int i = 0; i < n; ++i)
-		b[i]=rand()%10;
+		b[i]=rand()%10+1;
 	return b;
 }
 
@@ -79,6 +79,28 @@ void free_matrix(double ** m, int rows)
 		free(m[i]);
 	free(m);
 }
+
+ void check_solution(double ** m, double* b, double* x, int n)
+ {
+ 	for (int i = 0; i < n; ++i)
+ 	{
+ 		double sum=0;
+ 		for (int j = 0; j < n; ++j)
+ 		{
+ 			sum+=m[i][j]*x[j];
+ 		}
+
+ 		if((int)(sum-b[i])!=0)
+ 		{
+ 			
+ 			printf("Wrong solution\n");
+ 			return;
+ 		}
+ 	}
+ 	
+ 	printf("Solution checked and correct.\n");
+ }
+
 //Solve the system using Gaussian elimination with back-substitution
 void GE_solve(double ** m, double* b, int n)
 {
@@ -97,16 +119,13 @@ void GE_solve(double ** m, double* b, int n)
     double c;
     for(int j=0; j<n; j++) 
     {
-        for(int i=0; i<n; i++)
+        for(int i=j+1; i<n; i++)
         {
-            if(i>j)
+            //c is the amount of times we need to substract row j to tow i
+            c=matrix[i][j]/matrix[j][j];
+            for(int k=0; k<=n; k++)
             {
-                //c is the amount of times we need to substract row j to tow i
-                c=matrix[i][j]/matrix[j][j];
-                for(int k=0; k<=n; k++)
-                {
-                    matrix[i][k]=matrix[i][k]-c*matrix[j][k];
-                }
+                matrix[i][k]=matrix[i][k]-c*matrix[j][k];
             }
         }
     }
@@ -127,6 +146,9 @@ void GE_solve(double ** m, double* b, int n)
     }
     for (int i = 0; i < n; ++i)
 	    printf("x[%d] = %f\n", i, solution[i]);
+
+	//Check that solution is correct
+	check_solution(m,b,solution,n);
 
     //free augmented matrix
     free_matrix(matrix,n);
