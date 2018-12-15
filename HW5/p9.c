@@ -16,9 +16,6 @@ double ** generate_matrix(int n)
 	for (int i = 0; i < n; ++i)
 		matrix[i]= (double*)malloc(n*sizeof(double));
 
-	time_t t; 
-	//Intializes random number generator
-	srand((unsigned) time(&t));
 	double a=rand()%10+1;
 	for (int i = 0; i < n; ++i)
 	{
@@ -82,37 +79,55 @@ void free_matrix(double ** m, int rows)
 	free(m);
 }
 
- void check_solution(double ** m, double* b, double* x, int n)
- {
- 	for (int i = 0; i < n; ++i)
- 	{
- 		double sum=0;
- 		for (int j = 0; j < n; ++j)
- 		{
- 			sum+=m[i][j]*x[j];
- 		}
+int check_solution(double ** m, double* b, double* x, int n)
+{
+	for (int i = 0; i < n; ++i)
+	{
+		double sum=0;
+		for (int j = 0; j < n; ++j)
+		{
+			sum+=m[i][j]*x[j];
+		}
 
- 		if((int)(sum-b[i])!=0)
- 		{
- 			
- 			printf("Wrong solution. sum = %f, b[%d] = %f \n", sum, i ,b[i]);
- 			return;
- 		}
- 	}
- 	
- 	printf("Solution checked and correct.\n");
- }
+		if((int)(sum-b[i])!=0)
+		{
+			
+			printf("Wrong solution. sum = %f, b[%d] = %f \n", sum, i ,b[i]);
+			return 0;
+		}
+	}
+	
+	//printf("Solution checked and correct.\n");
+	return 1;
+}
+
+double ** copy_matrix(double**m, int n)
+{
+	double ** copy= (double**) malloc(n*sizeof(double*));
+	for (int i = 0; i < n; ++i)
+		copy[i] = (double*) malloc((n+1)*sizeof(double));
+
+	//Copy elements of m
+	for (int i = 0; i < n; ++i)
+	{
+		for (int j = 0; j <= n; ++j)
+		{
+			copy[i][j] = m[i][j];
+		}
+	}
+
+	return copy;
+}
 
 //Solve the system using Gaussian elimination with back-substitution
-void GE_solve(double ** m, double* b, int n)
+int GE_solve(double ** m, double* b, int n)
 {
 	double solution[n];
 
 	//Step 0: Generate the augmented matrix
 	double ** matrix = generate_augmented_matrix(m,b,n);
-	printf("Original augmented matrix:\n");
-    print_augmented_matrix(matrix,n);
-    printf("\n");
+	double ** matrix_original = copy_matrix(matrix,n);
+
 
 	//Gaussian eliminarion
 	//Traverse the matrix through columns.
@@ -131,9 +146,7 @@ void GE_solve(double ** m, double* b, int n)
             }
         }
     }
-	printf("Upper triangular augmented matrix:\n");
-	print_augmented_matrix(matrix,n);
-	printf("\n");
+
 
 	//Back sustitution
 	solution[n-1]=matrix[n-1][n]/matrix[n-1][n-1];
@@ -146,15 +159,34 @@ void GE_solve(double ** m, double* b, int n)
         }
         solution[i]=(matrix[i][n]-sum)/matrix[i][i];
     }
-    for (int i = 0; i < n; ++i)
-	    printf("x[%d] = %f\n", i, solution[i]);
 
 	//Check that solution is correct
-	check_solution(m,b,solution,n);
+	if(!check_solution(m,b,solution,n))
+	{
+	    free_matrix(matrix,n);
+	    free_matrix(matrix_original,n);
+		return 1;
+	}
+
+	//Print results
+
+	printf("Original augmented matrix:\n");
+    print_augmented_matrix(matrix_original,n);
+    printf("\n");
+
+	printf("Upper triangular augmented matrix:\n");
+	print_augmented_matrix(matrix,n);
+	printf("\n");
+
+	printf("Solution:\n");
+    for (int i = 0; i < n; ++i)
+   		printf("x[%d] = %f\n", i, solution[i]);
 
     //free augmented matrix
     free_matrix(matrix,n);
+    free_matrix(matrix_original,n);
 
+    return 0;
 }
 
 void GE_solve_parallel(double ** m, double* b, int n, int nthreads)
@@ -215,6 +247,10 @@ void GE_solve_parallel(double ** m, double* b, int n, int nthreads)
 
 int main(int argc, char const *argv[])
 {
+	//Intializes random number generator
+	time_t t; 
+	srand((unsigned) time(&t));
+
 	int n = atoi(argv[1]);
 	int nthreads = atoi(argv[2]);
 
@@ -223,11 +259,20 @@ int main(int argc, char const *argv[])
 
 	double * b = generate_vector(n);
 
-	printf("SERIAL GE\n");
-	GE_solve(matrix,b, n);
+	printf("SERIAL GE:\n\n");
+	int error = GE_solve(matrix,b, n);
 	printf("\n");
 
-	printf("PARALLEL GE\n");
-	GE_solve_parallel(matrix,b, n, nthreads);
+	while(error)
+	{
+		free_matrix(matrix,n);
+		free(b);
+		matrix = generate_matrix(n);
+		b = generate_vector(n);
+		error = GE_solve(matrix,b, n);
+	}
+
+	printf("PARALLEL GE:\n\n");
+	GE_solve_parallel(matrix,b, n, nthreads);	
 
 }
