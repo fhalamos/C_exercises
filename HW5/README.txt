@@ -38,7 +38,7 @@ We know that in an aperiodic and irreducible graph, stationaries probabilities e
 
 #P7
 -Call the program through /p7 n, where n is the dimension of squared matrix A.
--The matrix A and vector b are generated automatically with random numbers. If they happen to generate a sistem of equation with infinite or non solutions, just run the program again. In most cases this will not happen.
+-The matrix A and vector b are generated automatically with random numbers. If they happen to generate a sistem of equation with infinite or non solutions, just run the program again. You can identify this cases in case the matrix contains nan or inf values. In most cases this will not happen.
 
 --------------------
 
@@ -60,3 +60,6 @@ http://heather.cs.ucdavis.edu/~matloff/OpenMP/Examples/NM/Dijkstra.c
 
 #P7
 -https://www.codewithc.com/c-program-for-gauss-elimination-method/
+
+#P9
+-https://www.cs.rutgers.edu/~venugopa/parallel_summer2012/ge.html
